@@ -19,23 +19,46 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-plugins {
-    id 'com.github.johnrengelman.shadow' version '2.0.1'
-}
+//plugins {
+//    id 'com.github.johnrengelman.shadow' version '4.0.4'
+//}
+apply plugin: 'com.github.johnrengelman.shadow'
 
 repositories {
     mavenLocal()
+    mavenCentral()
 }
 
 apply from: "$buildScriptsDir/common-java.gradle"
 
+
+
+def shadowPrefix = 'com.microsoft.applicationinsights.agent.shadow'
+def glowrootVersion = '0.13.3-SNAPSHOT'
 shadowJar {
     classifier = ''
-//    relocate 'org.glowroot', 'com.microsoft.applicationinsights.agent.dependencies.glowroot'
-//    relocate 'org.objectweb.asm', 'com.microsoft.applicationinsights.agent.dependencies.asm'
-    relocate 'org.apache.commons', 'com.microsoft.applicationinsights.agent.dependencies.apachecommons'
-    relocate 'com.microsoft.applicationinsights.internal.logger', 'com.microsoft.applicationinsights.agent.dependencies.internallogger'
-//    relocate 'ch.qos.logback', 'com.microsoft.applicationinsights.agent.dependencies.logback'
+    mergeServiceFiles()
+
+//    relocate('org.glowroot', "${shadowPrefix}.glowroot")
+    relocate('org.objectweb.asm', "${shadowPrefix}.objectweb.asm")
+//    relocate('org.slf4j', "${shadowPrefix}.slf4j")
+    relocate('com.google', "${shadowPrefix}.google")
+    relocate('com.fasterxml.jackson', "${shadowPrefix}.fasterxml.jackson")
+    relocate('org.checkerframework.checker', "${shadowPrefix}.checkerframework.checker")
+
+    relocate('org.apache.commons', "${shadowPrefix}.apache.commons")
+    relocate('com.microsoft.applicationinsights.internal.logger', "${shadowPrefix}.internallogger")
+
+    exclude 'META-INF/maven/**'
+    exclude 'META-INF/LICENSE*'
+    exclude 'META-INF/NOTICE*'
+    exclude 'META-INF/services/javax.servlet.ServletContainerInitializer'
+
+//    dependencies {
+//        exclude(dependency("org.glowroot:glowroot-engine:$glowrootVersion"))
+//        exclude(dependency("org.glowroot:glowroot-instrumentation-api:$glowrootVersion"))
+//        exclude(dependency("org.glowroot.instrumentation:glowroot-instrumentation-all:$glowrootVersion"))
+//    }
 }
 archivesBaseName = 'applicationinsights-agent3'
 
@@ -43,7 +66,7 @@ jar {
     dependsOn shadowJar
     enabled = false
     manifest {
-        attributes("Premain-Class": "com.microsoft.applicationinsights.agent.internal.agent.AgentImplementation3",
+        attributes("Premain-Class": "com.microsoft.applicationinsights.agent3.internal.agent.AgentImplementation3Premain",
                     "Can-Redefine-Classes": "true",
                     "Can-Retransform-Classes": "true",
                     "agent-sdk-version":project.version
@@ -52,19 +75,15 @@ jar {
 }
 
 dependencies {
-    compile(project(':ApplicationInsightsInternalLogger'))
+    compile project(':ApplicationInsightsInternalLogger')
     compile 'org.slf4j:slf4j-api:1.7.25'
-//    compile 'ch.qos.logback:logback-classic:1.2.3'
+//    runtime 'org.slf4j:slf4j-jdk14:1.7.25'
 
-    // COMPILE ONLY IS "PROVIDED". STILL NEEDED AT RUNTIME
-    compileOnly 'org.glowroot:glowroot-engine:0.13.3-SNAPSHOT'
-    compileOnly 'org.glowroot:glowroot-instrumentation-api:0.13.3-SNAPSHOT'
-    compileOnly 'org.glowroot:glowroot-instrumentation-config:0.13.3-SNAPSHOT'
-    compileOnly 'org.glowroot.instrumentation:glowroot-instrumentation-all:0.13.3-SNAPSHOT'
+    compile "org.glowroot:glowroot-engine:$glowrootVersion"
+    compile "org.glowroot:glowroot-instrumentation-api:$glowrootVersion"
+    runtime "org.glowroot.instrumentation:glowroot-instrumentation-all:$glowrootVersion"
     compileOnly project(':core')
 
-//    compile group: 'org.ow2.asm', name: 'asm-commons', version: '5.2'
-//    compile group: 'org.ow2.asm', name: 'asm-all', version: '5.2'
 
     compile group: 'org.apache.commons', name:'commons-lang3', version:'3.7'
 

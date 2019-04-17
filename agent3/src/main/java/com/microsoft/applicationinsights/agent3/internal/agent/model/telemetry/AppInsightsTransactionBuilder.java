@@ -1,4 +1,4 @@
-package com.microsoft.applicationinsights.agent.internal.agent.model.telemetry;
+package com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry;
 
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.telemetry.BaseTelemetry;

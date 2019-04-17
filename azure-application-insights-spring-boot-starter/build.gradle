@@ -20,10 +20,10 @@ import com.microsoft.applicationinsights.build.tasks.PropsFileGen
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-plugins {
-    id 'com.github.johnrengelman.shadow' version '2.0.1'
-}
-
+//plugins {
+//    id 'com.github.johnrengelman.shadow' version '2.0.1'
+//}
+apply plugin: 'com.github.johnrengelman.shadow'
 apply from: "$buildScriptsDir/common-java.gradle"
 apply from: "$buildScriptsDir/publishing.gradle"
 

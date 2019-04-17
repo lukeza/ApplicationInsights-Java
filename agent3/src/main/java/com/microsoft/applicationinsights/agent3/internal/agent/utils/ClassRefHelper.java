@@ -1,4 +1,4 @@
-package com.microsoft.applicationinsights.agent.internal.agent.utils;
+package com.microsoft.applicationinsights.agent3.internal.agent.utils;
 
 public class ClassRefHelper {
 

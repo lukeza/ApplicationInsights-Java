@@ -1,6 +1,6 @@
-package com.microsoft.applicationinsights.agent.internal.agent;
+package com.microsoft.applicationinsights.agent3.internal.agent;
 
-import com.microsoft.applicationinsights.agent.internal.agent.utils.ConsoleOutputHelperForTesting;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.glowroot.engine.annotation.spi.GlowrootServiceSPI;
 
@@ -8,45 +8,45 @@ import java.util.concurrent.TimeUnit;
 
 public class GlowrootServiceImpl implements GlowrootServiceSPI {
 
-    private final ConsoleOutputHelperForTesting out = new ConsoleOutputHelperForTesting(GlowrootServiceImpl.class);
+    private static final DevLogger out = new DevLogger(GlowrootServiceImpl.class);
 
     GlowrootServiceImpl() {
-        out.logMethod("<init>");
+        out.info("<init>");
     }
 
     @Override
     public void setTransactionType(@Nullable String transactionType) {
         // TODO
-        out.logMethod("setTransactionType", "type=%s", transactionType);
+        out.info("setTransactionType: type=%s", transactionType);
     }
 
     @Override
     public void setTransactionName(@Nullable String transactionName) {
         // TODO
-        out.logMethod("setTransactionName", "name=%s", transactionName);
+        out.info("setTransactionName: name=%s", transactionName);
     }
 
     @Override
     public void setTransactionUser(@Nullable String user) {
         // TODO
-        out.logMethod("setTransactionUser", "user=%s", user);
+        out.info("setTransactionUser: user=%s", user);
     }
 
     @Override
     public void addTransactionAttribute(String name, @Nullable String value) {
         // TODO
-        out.logMethod("addTransactionAttribute", "name=%s, value=%s", name, value);
+        out.info("addTransactionAttribute: name=%s, value=%s", name, value);
     }
 
     @Override
     public void setTransactionSlowThreshold(long threshold, TimeUnit unit) {
         // TODO
-        out.logMethod("setTransactionUser", "threshold=%d %s", threshold, unit.toString());
+        out.info("setTransactionUser: threshold=%d %s", threshold, unit.toString());
     }
 
     @Override
     public void setTransactionOuter() {
         // TODO
-        out.logMethod("setTransactionOuter");
+        out.info("setTransactionOuter");
     }
 }

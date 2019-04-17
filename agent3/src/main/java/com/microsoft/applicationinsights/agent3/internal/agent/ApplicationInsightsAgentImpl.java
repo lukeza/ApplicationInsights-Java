@@ -1,10 +1,10 @@
-package com.microsoft.applicationinsights.agent.internal.agent;
+package com.microsoft.applicationinsights.agent3.internal.agent;
 
-import com.microsoft.applicationinsights.TelemetryClient;
-import com.microsoft.applicationinsights.agent.internal.agent.model.ThreadContextImpl;
-import com.microsoft.applicationinsights.agent.internal.agent.model.TraceEntryImpl;
-import com.microsoft.applicationinsights.agent.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
-import com.microsoft.applicationinsights.agent.internal.agent.utils.ConsoleOutputHelperForTesting;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.ThreadContextImpl;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.TraceEntryImpl;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.TimerUtil;
 import org.glowroot.engine.bytecode.api.ThreadContextThreadLocal;
 import org.glowroot.engine.bytecode.api.ThreadContextThreadLocal.Holder;
 import org.glowroot.engine.weaving.AgentSPI;
@@ -16,10 +16,10 @@ public class ApplicationInsightsAgentImpl implements AgentSPI {
 
 //    private TelemetryClient telemetryClient;
 
-    private final ConsoleOutputHelperForTesting out = new ConsoleOutputHelperForTesting(ApplicationInsightsAgentImpl.class);
+    private static final DevLogger out = new DevLogger(ApplicationInsightsAgentImpl.class);
 
     ApplicationInsightsAgentImpl() {
-        out.logMethod("<init>");
+        out.info("<init>");
 //        telemetryClient = new TelemetryClient();
     }
 
@@ -27,7 +27,7 @@ public class ApplicationInsightsAgentImpl implements AgentSPI {
     public TraceEntry startTransaction(String transactionType, String transactionName,
                                        MessageSupplier messageSupplier, TimerName timerName, Holder threadContextHolder,
                                        int rootNestingGroupId, int rootSuppressionKeyId) {
-        out.logMethod("startTransaction", "type=%s, name=%s", transactionType, transactionName);
+        out.info("startTransaction: type=%s, name=%s, timerName=%s", transactionType, transactionName, TimerUtil.getTimerName(timerName));
         final AppInsightsTransactionBuilder operationBuilder =
                 AppInsightsTransactionBuilder.startOperation()
                 .setTransactionName(transactionName);

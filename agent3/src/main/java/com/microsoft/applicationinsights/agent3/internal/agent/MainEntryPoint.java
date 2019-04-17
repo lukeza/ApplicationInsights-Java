@@ -1,6 +1,6 @@
-package com.microsoft.applicationinsights.agent.internal.agent;
+package com.microsoft.applicationinsights.agent3.internal.agent;
 
-import com.microsoft.applicationinsights.agent.internal.agent.utils.Global;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.Global;
 import org.glowroot.engine.init.EngineModule;
 import org.glowroot.engine.init.MainEntryPointUtil;
 import org.slf4j.Logger;
@@ -13,10 +13,9 @@ public class MainEntryPoint {
     private MainEntryPoint() {}
 
     public static void premain(Instrumentation instrumentation, File agentJarFile) {
-        System.out.println("MainEntryPoint.premain");
         Logger startupLogger;
         try {
-            startupLogger = MainEntryPointUtil.initLogging("com.microsoft.agent3", instrumentation);
+            startupLogger = MainEntryPointUtil.initLogging("com.microsoft.applicationinsights.agent3", instrumentation);
         } catch (ThreadDeath td) {
             throw td;
         } catch (Throwable t) {
@@ -26,6 +25,7 @@ public class MainEntryPoint {
         }
 
         try {
+            System.out.println("Starting Application Insights Agent v3");
             start(instrumentation, agentJarFile);
         } catch (ThreadDeath td) {
             throw td;
@@ -35,16 +35,13 @@ public class MainEntryPoint {
     }
 
     private static void start(Instrumentation instrumentation, File agentJarFile) throws Exception {
-        System.out.println("start");
         File tmpDir = new File(agentJarFile.getParentFile(), "tmp");
 
-        System.out.println("Create agentImpl");
         ApplicationInsightsAgentImpl agent = new ApplicationInsightsAgentImpl();
 
 
-        System.out.println("create EngineModule");
         EngineModule.createWithManyDefaults(instrumentation, tmpDir, Global.getThreadContextThreadLocal(),
-                new GlowrootServiceImpl(), agent, agentJarFile);
+                new GlowrootServiceImpl(), agent, agentJarFile);// TODO use return value?
 
         // TODO additional agent init?
     }

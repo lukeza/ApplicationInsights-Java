@@ -19,10 +19,11 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-plugins {
-    id 'com.github.johnrengelman.shadow' version '2.0.1'
-}
+//plugins {
+//    id 'com.github.johnrengelman.shadow' version '2.0.1'
+//}
 
+apply plugin: 'com.github.johnrengelman.shadow'
 apply from: "$buildScriptsDir/common-java.gradle"
 
 archivesBaseName = 'applicationinsights-all'

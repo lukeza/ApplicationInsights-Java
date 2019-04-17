@@ -1,4 +1,4 @@
-package com.microsoft.applicationinsights.agent.internal.agent;
+package com.microsoft.applicationinsights.agent3.internal.agent;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,19 +11,19 @@ import java.util.jar.JarFile;
 /**
  * Premain-Class in Manifest
  */
-public class AgentImplementation3 {
-    private AgentImplementation3() {}
+public class AgentImplementation3Premain {
+    private AgentImplementation3Premain() {}
 
     public static void premain(String agentArgs, Instrumentation instrumentation) {
         try {
-            CodeSource cs = AgentImplementation3.class.getProtectionDomain().getCodeSource();
+            CodeSource cs = AgentImplementation3Premain.class.getProtectionDomain().getCodeSource();
             File agentJarFile = getAgentJarFile(cs);
 
             instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(agentJarFile));
 
             System.out.println("Searching for MainEntryPoint");
-            Class<?> mainEntryPointClass = Class.forName("com.microsoft.applicationinsights.agent.internal.agent.MainEntryPoint",
-                    true, AgentImplementation3.class.getClassLoader());
+            Class<?> mainEntryPointClass = Class.forName("com.microsoft.applicationinsights.agent3.internal.agent.MainEntryPoint",
+                    true, AgentImplementation3Premain.class.getClassLoader());
             Method premainMethod = mainEntryPointClass.getMethod("premain", Instrumentation.class, File.class);
             premainMethod.invoke(null, instrumentation, agentJarFile);
 
