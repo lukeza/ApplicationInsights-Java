@@ -1,6 +1,6 @@
 package com.microsoft.applicationinsights.agent3.internal.agent;
 
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.dev.DevLogger;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.glowroot.engine.annotation.spi.GlowrootServiceSPI;
 
