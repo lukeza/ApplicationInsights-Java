@@ -75,15 +75,14 @@ jar {
 }
 
 dependencies {
-//    compile project(':ApplicationInsightsInternalLogger')
+//    compile project(':ApplicationInsightsInternalLogger') // TODO include? or use slf4j?
     compile 'org.slf4j:slf4j-api:1.7.25'
-//    runtime 'org.slf4j:slf4j-jdk14:1.7.25'
 
-    compile "org.glowroot:glowroot-engine:$glowrootVersion"
-    compile "org.glowroot:glowroot-instrumentation-api:$glowrootVersion"
-    runtime "org.glowroot.instrumentation:glowroot-instrumentation-all:$glowrootVersion"
+    compile "org.glowroot:glowroot-engine:$glowrootVersion" // FIXME currently, must be built locally
+    compile "org.glowroot:glowroot-instrumentation-api:$glowrootVersion" // FIXME currently, must be built locally
+    runtime "org.glowroot.instrumentation:glowroot-instrumentation-all:$glowrootVersion" // FIXME currently, must be built locally
+
     compile files(new File(project(':core').buildDir, 'libs/applicationinsights-core-2.4.0-BETA-SNAPSHOT.jar'))
-
 
     compile group: 'org.apache.commons', name:'commons-lang3', version:'3.7'
 
