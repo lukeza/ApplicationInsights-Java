@@ -1,62 +1,51 @@
 package com.microsoft.applicationinsights.agent3.internal.agent.model;
 
-import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.BaseAppInsightsTxBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.dev.DevLogger;
 import org.glowroot.engine.impl.NopTransactionService;
-import org.glowroot.instrumentation.api.Message;
+import org.glowroot.instrumentation.api.AsyncTraceEntry;
 import org.glowroot.instrumentation.api.MessageSupplier;
+import org.glowroot.instrumentation.api.ThreadContext;
 import org.glowroot.instrumentation.api.Timer;
-import org.glowroot.instrumentation.api.TraceEntry;
-import org.glowroot.instrumentation.api.internal.ReadableMessage;
+import org.glowroot.instrumentation.api.TimerName;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-public class TraceEntryImpl implements TraceEntry {
-    private final Object messageSupplier;
-    private final AppInsightsTransactionBuilder tx;
+public class TraceEntryImpl implements AsyncTraceEntry {
+    private final MessageSupplier messageSupplier;
+    protected final BaseAppInsightsTxBuilder tx;
 
     private static final DevLogger out = new DevLogger(TraceEntryImpl.class);
+    private final TimerName timerName;
+    private boolean reportExceptionsOnSuccess = true;
 
-    public TraceEntryImpl(AppInsightsTransactionBuilder tx, Object messageSupplier) {
+
+    public TraceEntryImpl(BaseAppInsightsTxBuilder tx, MessageSupplier messageSupplier, TimerName timerName) {
         this.messageSupplier = messageSupplier;
         this.tx = tx;
-        out.info("<init>");
+        this.timerName = timerName;
     }
 
-    private ReadableMessage getMessage() {
-        Object o = getMessageSupplier();
-        if (o instanceof MessageSupplier) {
-            MessageSupplier ms = (MessageSupplier) o;
-            Message msg = ms.get();
-            if (msg != null) {
-                if (msg instanceof ReadableMessage) {
-                    return (ReadableMessage) msg;
-                } else {
-                    out.info("UNEXPECTED MESSAGE TYPE: %s returned a %s", ms.getClass().getSimpleName(), msg.getClass().getSimpleName());
-                }
-            }
-        } else {
-            out.info("%s had a %s; but expected %s", TraceEntryImpl.class.getSimpleName(), o.getClass().getSimpleName(), MessageSupplier.class.getSimpleName());
-        }
-        return null;
-    }
-
-    protected void done() {
+    protected void done(boolean success) {
         // TODO
-        final ReadableMessage msg = getMessage();
-        if (msg == null) {
-            out.info("done");
-        } else {
-            out.info("done; text=%s, detail=%s", msg.getText(), Arrays.toString(msg.getDetail().entrySet().toArray()));
-        }
+        tx.addTraceData(getMessageSupplier(), timerName);
+        tx.setEndTime(System.currentTimeMillis());
         cleanUp();
     }
 
     private void done(Throwable t) {
         out.info("done", t);
         // TODO
-        done();
+        done(t, false);
+    }
+
+    private void done(Throwable t, boolean success) {
+        out.info("done", t);
+        // TODO
+        if (!success && reportExceptionsOnSuccess) {
+            // TODO create exception telemetry; where to store it?
+        }
+        done(success);
     }
 
     /**
@@ -69,15 +58,14 @@ public class TraceEntryImpl implements TraceEntry {
     @Override
     public void end() {
         // TODO
-        out.info("end");
-        done();
+        done(true);
     }
 
     @Override
     public void endWithLocationStackTrace(long threshold, TimeUnit unit) {
         // TODO
         out.info("endWithLocationStackTrace: threshold=%d %s", threshold, unit.toString());
-        done();
+        done(true); // TODO is this successful?
     }
 
     @Override
@@ -91,7 +79,7 @@ public class TraceEntryImpl implements TraceEntry {
     public void endWithError(String message) {
         // TODO
         out.info("endWithError: msg=%s", message);
-        done();
+        done(false);
     }
 
     @Override
@@ -105,7 +93,7 @@ public class TraceEntryImpl implements TraceEntry {
     public void endWithInfo(Throwable t) {
         // TODO
         out.info("endWithInfo: t=%s", t.getClass().getSimpleName());
-        done(); // chomp t ?
+        done(t, true); // chomp t ?
     }
 
     @Override
@@ -115,7 +103,18 @@ public class TraceEntryImpl implements TraceEntry {
     }
 
     @Override
-    public Object getMessageSupplier() {
+    public MessageSupplier getMessageSupplier() {
         return messageSupplier;
+    }
+
+    @Override
+    public void stopSyncTimer() {
+        // TODO
+    }
+
+    @Override
+    public Timer extendSyncTimer(ThreadContext currThreadContext) {
+        // TODO
+        return NopTransactionService.TIMER;
     }
 }

@@ -1,7 +1,10 @@
 package com.microsoft.applicationinsights.agent3.internal.agent.model;
 
-import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.AppInsightsSender;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.AppInsightsTransactionBuilderProvider;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.AppInsightsTransactionBuilderProvider.NopTxBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.BaseAppInsightsTxBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.dev.DevLogger;
 import org.glowroot.engine.bytecode.api.ThreadContextPlus;
 import org.glowroot.engine.impl.NopTransactionService;
 import org.glowroot.instrumentation.api.AsyncQueryEntry;
@@ -20,16 +23,19 @@ import static com.microsoft.applicationinsights.agent3.internal.agent.utils.Time
 
 public class ThreadContextImpl implements ThreadContextPlus {
 
-    private final AppInsightsTransactionBuilder transactionBuilder;
+    private final BaseAppInsightsTxBuilder rootTx;
+    private final AppInsightsSender sender;
     private int currentNestingGroupId; // TODO what to do with this?
     private int currentSuppressionKeyId; // TODO what to do with this?
     private ServletRequestInfo servletRequestInfo;
 
     private static final DevLogger out = new DevLogger(ThreadContextImpl.class);
 
-    public ThreadContextImpl(AppInsightsTransactionBuilder transactionBuilder) {
-        out.info("<init>");
-        this.transactionBuilder = transactionBuilder;
+    public ThreadContextImpl(BaseAppInsightsTxBuilder rootTx, AppInsightsSender sender, int rootNestingGroupId, int rootSuppressionKeyId) {
+        this.rootTx = rootTx;
+        this.sender = sender;
+        setCurrentNestingGroupId(rootNestingGroupId);
+        setCurrentSuppressionKeyId(rootSuppressionKeyId);
     }
 
     @Override
@@ -61,64 +67,83 @@ public class ThreadContextImpl implements ThreadContextPlus {
     @Override
     public TraceEntry startTransaction(String transactionType, String transactionName, MessageSupplier messageSupplier, TimerName timerName) {
         // TODO
-        out.info("startTransaction$1: txType=%s, txName=%s, timerName=%s", transactionType, transactionName, getTimerName(timerName));
-        return new TraceEntryImpl(transactionBuilder, messageSupplier);
+        out.info("startTransaction$0: txType=%s, txName=%s, timerName=%s", transactionType, transactionName, getTimerName(timerName));
+        return createChildTraceEntry(transactionType, transactionName, messageSupplier, timerName);
     }
 
     @Override
     public TraceEntry startTransaction(String transactionType, String transactionName, MessageSupplier messageSupplier, TimerName timerName, AlreadyInTransactionBehavior alreadyInTransactionBehavior) {
         // TODO
         out.info("startTransaction$1: txType=%s, txName=%s, timerName=%s", transactionType, transactionName, getTimerName(timerName));
-        return new TraceEntryImpl(transactionBuilder, messageSupplier);
+        return createChildTraceEntry(transactionType, transactionName, messageSupplier, timerName);
     }
 
     @Override
     public TraceEntry startTraceEntry(MessageSupplier messageSupplier, TimerName timerName) {
         // TODO
         out.info("startTraceEntry; timerName=%s", getTimerName(timerName));
-        return new TraceEntryImpl(transactionBuilder, messageSupplier);
+        return new TraceEntryImpl(rootTx, messageSupplier, timerName);
     }
 
     @Override
     public AsyncTraceEntry startAsyncTraceEntry(MessageSupplier messageSupplier, TimerName timerName) {
         // TODO
         out.info("startAsyncTraceEntry; timerName=%s", getTimerName(timerName));
-        return new AsyncTraceEntryImpl(transactionBuilder, messageSupplier);
+        return new TraceEntryImpl(rootTx, messageSupplier, timerName);
     }
 
     @Override
     public QueryEntry startQueryEntry(String queryType, String queryText, QueryMessageSupplier queryMessageSupplier, TimerName timerName) {
         // TODO
         out.info("startQueryEntry$1: qType=%s, qText=%s, timerName=%s", queryType, queryText, getTimerName(timerName));
-        return new QueryEntryImpl(transactionBuilder, queryMessageSupplier);
+        return NopTransactionService.QUERY_ENTRY;
     }
 
     @Override
     public QueryEntry startQueryEntry(String queryType, String queryText, long queryExecutionCount, QueryMessageSupplier queryMessageSupplier, TimerName timerName) {
         // TODO
         out.info("startQueryEntry$2: qType=%s, qText=%s, timerName=%s", queryType, queryText, getTimerName(timerName));
-        return new QueryEntryImpl(transactionBuilder, queryMessageSupplier);
+        return NopTransactionService.QUERY_ENTRY;
     }
 
     @Override
     public AsyncQueryEntry startAsyncQueryEntry(String queryType, String queryText, QueryMessageSupplier queryMessageSupplier, TimerName timerName) {
         // TODO
         out.info("startAsyncQueryEntry: qType=%s, qText=%s, timerName=%s", queryType, queryText, getTimerName(timerName));
-        return new AsyncQueryEntryImpl(transactionBuilder, queryMessageSupplier);
+        return NopTransactionService.ASYNC_QUERY_ENTRY;
     }
 
     @Override
     public TraceEntry startServiceCallEntry(String type, String text, MessageSupplier messageSupplier, TimerName timerName) {
         // TODO
-        out.info("startServiceCallEntry: type=%s, text=%s, timerName=%s", type, text, getTimerName(timerName));
-        return new TraceEntryImpl(transactionBuilder, messageSupplier); // TODO difference class for service call?
+        // TODO will this always be a child/remote dependency?
+        return createChildTraceEntry(type, text, messageSupplier, timerName);
+    }
+
+    private TraceEntry createChildTraceEntry(String type, String text, MessageSupplier messageSupplier, TimerName timerName) {
+        final BaseAppInsightsTxBuilder nextTx = AppInsightsTransactionBuilderProvider.getInstance().getTransactionBuilder(type);
+        if (nextTx instanceof NopTxBuilder) {
+            return NopTransactionService.TRACE_ENTRY;
+        }
+        nextTx.setName(text);
+        nextTx.setTransactionContext(rootTx.getTransactionContext().nextChild());
+        nextTx.setStartTime(System.currentTimeMillis());
+        return new TrackingTraceEntryImpl(nextTx, sender, messageSupplier, timerName);
     }
 
     @Override
     public AsyncTraceEntry startAsyncServiceCallEntry(String type, String text, MessageSupplier messageSupplier, TimerName timerName) {
         // TODO
         out.info("startAsyncServiceCallEntry: type=%s, text=%s, timerName=%s", type, text, getTimerName(timerName));
-        return new AsyncTraceEntryImpl(transactionBuilder, messageSupplier);
+        final BaseAppInsightsTxBuilder nextTx = AppInsightsTransactionBuilderProvider.getInstance().getTransactionBuilder(type);
+        if (nextTx instanceof NopTxBuilder) {
+            return NopTransactionService.ASYNC_TRACE_ENTRY;
+        }
+        nextTx.setName(text);
+        nextTx.setTransactionContext(rootTx.getTransactionContext().nextChild());
+        nextTx.setStartTime(System.currentTimeMillis());
+        // TODO tracking trace entry
+        return new TraceEntryImpl(nextTx, messageSupplier, timerName);
     }
 
     @Override
@@ -156,6 +181,7 @@ public class ThreadContextImpl implements ThreadContextPlus {
     @Override
     public void setTransactionType(String transactionType, int priority) {
         // TODO
+        // FIXME this would change the type of Telemetry object...not sure what to do here yet
         out.info("setTransactionType: type=%s, p=%s", transactionType, priority);
     }
 
@@ -163,24 +189,27 @@ public class ThreadContextImpl implements ThreadContextPlus {
     public void setTransactionName(String transactionName, int priority) {
         // TODO
         out.info("setTransactionName: name=%s, p=%s", transactionName, priority);
+        // TODO this should change the name of rootTx; how to use priority?
     }
 
     @Override
     public void setTransactionUser(String user, int priority) {
         // TODO
         out.info("setTransactionUser: user=%s, p=%s", user, priority);
+        // TODO this would add dimension/properties
     }
 
     @Override
     public void addTransactionAttribute(String name, String value) {
         // TODO
         out.info("addTransactionAttribute: name=%s, value=%s", name, value);
+        // TODO should this add a property to rootTx, or does it have a different purpose
     }
 
     @Override
     public void setTransactionSlowThreshold(long threshold, TimeUnit unit, int priority) {
         // TODO
-        out.info("setTransactionSlowThreshold: threshold=%d %s, p=%d", threshold, unit.toString(), priority);
+//        out.info("setTransactionSlowThreshold: threshold=%d %s, p=%d", threshold, unit.toString(), priority);
     }
 
     @Override
@@ -226,7 +255,7 @@ public class ThreadContextImpl implements ThreadContextPlus {
 
     @Override
     public void setServletRequestInfo(ServletRequestInfo servletRequestInfo) {
-        out.info("setServletRequestInfo: method=%s, contextPath=%s, servletPath=%s", servletRequestInfo.getMethod(), servletRequestInfo.getContextPath(), servletRequestInfo.getServletPath());
+        rootTx.setServletRequestInfo(servletRequestInfo);
         this.servletRequestInfo = servletRequestInfo;
     }
 }

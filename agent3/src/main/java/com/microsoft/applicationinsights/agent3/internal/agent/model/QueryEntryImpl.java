@@ -1,20 +1,28 @@
 package com.microsoft.applicationinsights.agent3.internal.agent.model;
 
-import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
-import org.glowroot.instrumentation.api.QueryEntry;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.BaseAppInsightsTxBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.dev.DevLogger;
+import org.glowroot.engine.impl.NopTransactionService;
+import org.glowroot.instrumentation.api.AsyncQueryEntry;
 import org.glowroot.instrumentation.api.QueryMessage;
 import org.glowroot.instrumentation.api.QueryMessageSupplier;
+import org.glowroot.instrumentation.api.ThreadContext;
+import org.glowroot.instrumentation.api.Timer;
 import org.glowroot.instrumentation.api.internal.ReadableQueryMessage;
 
-import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
-public class QueryEntryImpl extends TraceEntryImpl implements QueryEntry {
+public class QueryEntryImpl implements AsyncQueryEntry {
 
     private static final DevLogger out = new DevLogger(QueryEntryImpl.class);
+    private final QueryMessageSupplier messageSupplier;
+    private final BaseAppInsightsTxBuilder tx;
 
-    public QueryEntryImpl(AppInsightsTransactionBuilder tx, Object queryMessageSupplier) {
-        super(tx, queryMessageSupplier);
+    public QueryEntryImpl(BaseAppInsightsTxBuilder tx, QueryMessageSupplier queryMessageSupplier) {
+        // TODO
+        out.info("<init>");
+        this.messageSupplier = queryMessageSupplier;
+        this.tx = tx;
     }
 
     @Override
@@ -35,17 +43,6 @@ public class QueryEntryImpl extends TraceEntryImpl implements QueryEntry {
         out.info("setCurrRow: row=%d", row);
     }
 
-    @Override
-    protected void done() {
-        ReadableQueryMessage msg = getQueryMessage();
-        if (msg == null) {
-            out.info("done");
-        } else {
-            out.info("done; prefix=%s, suffix=%s, detail=%s", msg.getPrefix(), msg.getSuffix(), Arrays.toString(msg.getDetail().entrySet().toArray()));
-        }
-        cleanUp();
-    }
-
     private ReadableQueryMessage getQueryMessage() {
         Object o = getMessageSupplier();
         if (o instanceof QueryMessageSupplier) {
@@ -62,5 +59,55 @@ public class QueryEntryImpl extends TraceEntryImpl implements QueryEntry {
             out.info("%s had a %s; but expected %s", QueryEntryImpl.class.getSimpleName(), o.getClass().getSimpleName(), QueryMessageSupplier.class.getSimpleName());
         }
         return null;
+    }
+
+    @Override
+    public void stopSyncTimer() {
+
+    }
+
+    @Override
+    public Timer extendSyncTimer(ThreadContext currThreadContext) {
+        return null;
+    }
+
+    @Override
+    public void end() {
+
+    }
+
+    @Override
+    public void endWithLocationStackTrace(long threshold, TimeUnit unit) {
+
+    }
+
+    @Override
+    public void endWithError(Throwable t) {
+
+    }
+
+    @Override
+    public void endWithError(String message) {
+
+    }
+
+    @Override
+    public void endWithError(String message, Throwable t) {
+
+    }
+
+    @Override
+    public void endWithInfo(Throwable t) {
+
+    }
+
+    @Override
+    public Timer extend() {
+        return NopTransactionService.TIMER;
+    }
+
+    @Override
+    public QueryMessageSupplier getMessageSupplier() {
+        return this.messageSupplier;
     }
 }

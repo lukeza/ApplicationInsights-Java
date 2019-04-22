@@ -1,7 +1,7 @@
 package com.microsoft.applicationinsights.agent3.internal.agent.model;
 
-import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.BaseAppInsightsTxBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.dev.DevLogger;
 import org.glowroot.engine.impl.NopTransactionService;
 import org.glowroot.instrumentation.api.AsyncQueryEntry;
 import org.glowroot.instrumentation.api.QueryMessageSupplier;
@@ -12,7 +12,7 @@ public class AsyncQueryEntryImpl extends QueryEntryImpl implements AsyncQueryEnt
 
     private static final DevLogger out = new DevLogger(AsyncQueryEntryImpl.class);
 
-    public AsyncQueryEntryImpl(AppInsightsTransactionBuilder tx, QueryMessageSupplier queryMessageSupplier) {
+    public AsyncQueryEntryImpl(BaseAppInsightsTxBuilder tx, QueryMessageSupplier queryMessageSupplier) {
         super(tx, queryMessageSupplier);
     }
 

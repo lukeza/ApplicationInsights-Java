@@ -1,11 +1,13 @@
 package com.microsoft.applicationinsights.agent3.internal.agent;
 
+import com.microsoft.applicationinsights.TelemetryClient;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.RootTraceEntryImpl;
 import com.microsoft.applicationinsights.agent3.internal.agent.model.ThreadContextImpl;
-import com.microsoft.applicationinsights.agent3.internal.agent.model.TraceEntryImpl;
-import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.AppInsightsTransactionBuilder;
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.DevLogger;
-import com.microsoft.applicationinsights.agent3.internal.agent.utils.TimerUtil;
-import org.glowroot.engine.bytecode.api.ThreadContextThreadLocal;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.AppInsightsSender;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.AppInsightsTransactionBuilderProvider;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.AppInsightsTransactionContext;
+import com.microsoft.applicationinsights.agent3.internal.agent.model.telemetry.spi.appinsights.BaseAppInsightsTxBuilder;
+import com.microsoft.applicationinsights.agent3.internal.agent.utils.dev.DevLogger;
 import org.glowroot.engine.bytecode.api.ThreadContextThreadLocal.Holder;
 import org.glowroot.engine.weaving.AgentSPI;
 import org.glowroot.instrumentation.api.MessageSupplier;
@@ -14,42 +16,32 @@ import org.glowroot.instrumentation.api.TraceEntry;
 
 public class ApplicationInsightsAgentImpl implements AgentSPI {
 
-//    private TelemetryClient telemetryClient;
+    private final AppInsightsSender sender;
 
     private static final DevLogger out = new DevLogger(ApplicationInsightsAgentImpl.class);
 
     ApplicationInsightsAgentImpl() {
-        out.info("<init>");
-//        telemetryClient = new TelemetryClient();
+        TelemetryClient client = new TelemetryClient();
+        client.trackEvent("Glow Agent Init");
+        out.info("tracked init event");
+        sender = new AppInsightsSender(client);
     }
 
     @Override
     public TraceEntry startTransaction(String transactionType, String transactionName,
-                                       MessageSupplier messageSupplier, TimerName timerName, Holder threadContextHolder,
+                                       final MessageSupplier messageSupplier, TimerName timerName, Holder threadContextHolder,
                                        int rootNestingGroupId, int rootSuppressionKeyId) {
-        out.info("startTransaction: type=%s, name=%s, timerName=%s", transactionType, transactionName, TimerUtil.getTimerName(timerName));
-        final AppInsightsTransactionBuilder operationBuilder =
-                AppInsightsTransactionBuilder.startOperation()
-                .setTransactionName(transactionName);
-        ThreadContextImpl mainThreadContext = new ThreadContextImpl(operationBuilder);
+
+        final BaseAppInsightsTxBuilder transactionBuilder = AppInsightsTransactionBuilderProvider.getInstance().getTransactionBuilder(transactionType);
+
+        transactionBuilder.setTransactionContext(AppInsightsTransactionContext.createNew());
+        transactionBuilder.setStartTime(System.currentTimeMillis());
+        transactionBuilder.setName(transactionName);
+
+        ThreadContextImpl mainThreadContext = new ThreadContextImpl(transactionBuilder, sender, rootNestingGroupId, rootSuppressionKeyId);
         threadContextHolder.set(mainThreadContext);
 
-        return new RootTraceEntryImpl(operationBuilder, messageSupplier, threadContextHolder);
-    }
-
-    private static class RootTraceEntryImpl extends TraceEntryImpl {
-        private final ThreadContextThreadLocal.Holder tctlHolder;
-
-        public RootTraceEntryImpl(AppInsightsTransactionBuilder tx, Object messageSupplier,
-                                  ThreadContextThreadLocal.Holder tctlHolder) {
-            super(tx, messageSupplier);
-            this.tctlHolder = tctlHolder;
-        }
-
-        @Override
-        protected void cleanUp() {
-            tctlHolder.set(null);
-        }
+        return new RootTraceEntryImpl(transactionBuilder, sender, messageSupplier, threadContextHolder);
     }
 
 }
