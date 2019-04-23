@@ -19,9 +19,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-//plugins {
-//    id 'com.github.johnrengelman.shadow' version '4.0.4'
-//}
 apply plugin: 'com.github.johnrengelman.shadow'
 
 repositories {
