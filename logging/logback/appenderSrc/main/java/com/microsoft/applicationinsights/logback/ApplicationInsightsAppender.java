@@ -73,6 +73,7 @@ public class ApplicationInsightsAppender extends AppenderBase<ILoggingEvent> {
 
         ApplicationInsightsLogEvent aiEvent = new ApplicationInsightsLogEvent(eventObject);
         this.logTelemetryClientProxy.sendEvent(aiEvent);
+        this.logTelemetryClientProxy.flush();
     }
 
     @Override

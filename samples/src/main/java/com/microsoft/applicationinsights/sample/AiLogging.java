@@ -23,16 +23,17 @@ package com.microsoft.applicationinsights.sample;
 
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.TelemetryConfiguration;
+import com.microsoft.applicationinsights.telemetry.SeverityLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 @SuppressWarnings("ALL")
 public class AiLogging {
     public static void main(String[] args) throws IOException {
-
-        System.out.println("This program sends 2 events for each of the 3 supported logging technology.");
-
         TelemetryClient appInsights = new TelemetryClient();
+/*
         if (args.length > 0) {
             appInsights.getContext().setInstrumentationKey(args[0]);
         }
@@ -43,30 +44,18 @@ public class AiLogging {
             return;
         }
         System.out.println("Application iKey set to " + appInsights.getContext().getInstrumentationKey());
-        TelemetryConfiguration.getActive().getChannel().setDeveloperMode(true);
+        //TelemetryConfiguration.getActive().getChannel().setDeveloperMode(true);
+        appInsights.trackEvent("Test 1");
 
-        // Log4j 1.2
-        System.out.println("\n--- Logging using Log4j v1.2 ---");
-        org.apache.log4j.Logger log4j12Logger = org.apache.log4j.LogManager.getRootLogger();
-        log4j12Logger.trace("New Log4j 1.2 event!");
-        System.out.println("    Trace level log sent via log4j v1.2 logger.");
-        log4j12Logger.info("info: New Log4j 1.2 event!");
-        System.out.println("    Info level log sent via log4j v1.2 logger.");
-
-        // Log4j 2
-        System.out.println("\n--- Logging using Log4j v2 ---");
-        org.apache.logging.log4j.Logger log4j2Logger = org.apache.logging.log4j.LogManager.getRootLogger();
-        log4j2Logger.trace("New Log4j 2 event!");
-        System.out.println("    Trace level log sent via log4j v2 logger.");
-        log4j2Logger.info("info: New Log4j 2 event!");
-        System.out.println("    Info level log sent via log4j v2 logger.");
-
+        appInsights.trackTrace("Trace message1", SeverityLevel.Warning, null);
+*/
         // Logback
+        Logger log = LoggerFactory.getLogger(AiLogging.class);
         System.out.println("\n--- Logging using Logback ---");
-        ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("root");
-        logbackLogger.trace("New Logback event!");
-        System.out.println("    Trace level log sent via logback logger.");
-        logbackLogger.info("info: New Logback event!");
-        System.out.println("    Trace level log sent via logback logger.");
+        log.trace("New Logback event3!");
+        System.out.println("    Trace level log sent via logback logger3.");
+        log.info("info: New Logback event4!");
+        System.out.println("    Trace level log sent via logback logger4.");
+        appInsights.flush();
     }
 }

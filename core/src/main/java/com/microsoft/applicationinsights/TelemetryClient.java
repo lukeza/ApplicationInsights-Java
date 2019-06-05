@@ -433,13 +433,6 @@ public class TelemetryClient {
         }
 
         try {
-            QuickPulseDataCollector.INSTANCE.add(telemetry);
-        } catch (ThreadDeath td) {
-        	throw td;
-        } catch (Throwable t) {
-        }
-
-        try {
             getChannel().send(telemetry);
         } catch (ThreadDeath td) {
         	throw td;

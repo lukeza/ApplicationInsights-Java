@@ -33,21 +33,19 @@ import java.util.Properties;
  * A view into the context information specific to device information.
  */
 public class DeviceInfo {
-    private static OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
-
     public static String getOperatingSystem() {
-        return osBean.getName();
+        return "unknown";
     }
 
     public static String getOperatingSystemVersion() {
         // Note: osBean.getName will return a string like "Windows 8.1" which should be good enough for this field.
         // Calling osBean.getVersion on the other hand will only return 6.3 (Windows NT version) which will be less
         // intuitive to customers.
-        return osBean.getName();
+        return "unknown";
     }
 
     public static String getOperatingVersionArchitecture() {
-        return osBean.getArch();
+        return "unknown";
     }
 
     public static String getHostName() {

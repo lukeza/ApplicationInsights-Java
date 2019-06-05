@@ -107,6 +107,10 @@ public class LogTelemetryClientProxy implements TelemetryClientProxy {
         telemetryClient.track(telemetry);
     }
 
+    public void flush() {
+        telemetryClient.flush();
+    }
+
     /**
      * Gets the telemetry client.
      *

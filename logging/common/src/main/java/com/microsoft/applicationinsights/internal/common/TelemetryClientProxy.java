@@ -32,6 +32,8 @@ public interface TelemetryClientProxy {
      */
     void sendEvent(ApplicationInsightsEvent event);
 
+    void flush();
+
     /**
      * Gets the telemetry client.
      * @return The telemetry client.
