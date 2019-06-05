@@ -32,8 +32,8 @@ import java.io.IOException;
 @SuppressWarnings("ALL")
 public class AiLogging {
     public static void main(String[] args) throws IOException {
-        TelemetryClient appInsights = new TelemetryClient();
 /*
+        TelemetryClient appInsights = new TelemetryClient();
         if (args.length > 0) {
             appInsights.getContext().setInstrumentationKey(args[0]);
         }
@@ -56,6 +56,6 @@ public class AiLogging {
         System.out.println("    Trace level log sent via logback logger3.");
         log.info("info: New Logback event4!");
         System.out.println("    Trace level log sent via logback logger4.");
-        appInsights.flush();
+        //appInsights.flush();
     }
 }
